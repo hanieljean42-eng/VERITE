@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { parseWhatsAppExport, ParsedChat } from "@/lib/whatsapp-parser";
 import { analyzeChat, ChatAnalysis, Gender } from "@/lib/analyzer";
 import { computeAllFeatures, FeatureResults } from "@/lib/features";
@@ -25,6 +25,19 @@ export default function Home() {
     setParsed(result);
     setStep("setup");
   }, []);
+
+  // Listen for files shared from WhatsApp via PWA Share Target
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      const handler = (event: MessageEvent) => {
+        if (event.data?.type === "shared-file" && event.data.text) {
+          handleFileLoaded(event.data.text);
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", handler);
+      return () => navigator.serviceWorker.removeEventListener("message", handler);
+    }
+  }, [handleFileLoaded]);
 
   const handleSetupComplete = useCallback(
     (youName: string, otherName: string, otherGender: Gender) => {

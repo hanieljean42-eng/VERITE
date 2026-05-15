@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 
 interface Props {
   onFileLoaded: (content: string) => void;
@@ -10,6 +10,29 @@ export default function UploadScreen({ onFileLoaded }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Check if already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === "accepted") setIsInstalled(true);
+    setInstallPrompt(null);
+  };
 
   const readFile = useCallback(
     (file: File) => {
@@ -108,8 +131,28 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         )}
       </div>
 
+      {/* Install PWA banner */}
+      {!isInstalled && (
+        <div className="mt-8 w-full max-w-sm glass-card p-4 text-center"
+          style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(247,37,133,0.06))" }}>
+          <p className="text-sm font-bold text-dark-700 mb-1">📲 Installe l'app !</p>
+          <p className="text-xs text-dark-500 mb-3">Pour recevoir directement les fichiers depuis WhatsApp</p>
+          {installPrompt ? (
+            <button onClick={handleInstall}
+              className="btn-primary px-6 py-2 text-sm">
+              Installer Vérité
+            </button>
+          ) : (
+            <p className="text-[11px] text-dark-400">
+              Sur Chrome : <strong>⋮ Menu → Installer l'application</strong><br/>
+              Sur Safari : <strong>Partager → Sur l'écran d'accueil</strong>
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Instructions */}
-      <div className="mt-10 w-full max-w-sm">
+      <div className="mt-8 w-full max-w-sm">
         <p className="text-[11px] font-bold text-dark-400 uppercase tracking-widest mb-4 text-center">
           💡 Comment exporter
         </p>
