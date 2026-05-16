@@ -79,11 +79,11 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: "overview", label: "Global", icon: "📊" },
-    { id: "features", label: "Insights", icon: "✨" },
+    { id: "features", label: "Aperçus", icon: "✨" },
     { id: "you", label: "Toi", icon: "👤" },
     { id: "other", label: other.name.slice(0, 8), icon: otherGender === "female" ? "👩" : "👨" },
-    { id: "flags", label: "Flags", icon: "🚩" },
-    { id: "deep", label: "Deep", icon: "🔬" },
+    { id: "flags", label: "Alertes", icon: "🚩" },
+    { id: "deep", label: "Profond", icon: "🔬" },
   ];
 
   return (
@@ -94,7 +94,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
           style={{ background: "linear-gradient(135deg, #8b5cf6, #f72585, #ffa62b)" }}>
           <span className="text-3xl">{analysis.verdictEmoji}</span>
         </div>
-        <h1 className="text-2xl font-black gradient-text">Vérité Wrapped</h1>
+        <h1 className="text-2xl font-black gradient-text">Vérité Résumé</h1>
         <p className="text-dark-500 text-sm mt-2 leading-snug px-2">{analysis.verdict}</p>
       </div>
 
@@ -196,7 +196,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
             {/* Emoji War */}
             {analysis.emojiWar.length > 0 && (
               <div className="glass-card p-4">
-                <h3 className="section-title">😀 Emoji War</h3>
+                <h3 className="section-title">😀 Bataille d'Emojis</h3>
                 {analysis.emojiWar.map((e) => (
                   <div key={e.emoji} className="flex items-center gap-2 mb-2">
                     <span className="text-xl w-7 text-center">{e.emoji}</span>
@@ -294,9 +294,9 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
               <div className="space-y-2.5">
                 {[
                   { l: "Manipulation", v: features.toxicity.manipulation, c: "bg-red-500" },
-                  { l: "Love Bombing", v: features.toxicity.loveBombing, c: "bg-accent-pink" },
-                  { l: "Ghosting", v: features.toxicity.ghosting, c: "bg-verite-500" },
-                  { l: "Breadcrumbing", v: features.toxicity.breadcrumbing, c: "bg-accent-orange" },
+                  { l: "Bombardement affectif", v: features.toxicity.loveBombing, c: "bg-accent-pink" },
+                  { l: "Disparitions", v: features.toxicity.ghosting, c: "bg-verite-500" },
+                  { l: "Miettes d'attention", v: features.toxicity.breadcrumbing, c: "bg-accent-orange" },
                   { l: "Effort unilatéral", v: features.toxicity.oneWayEffort, c: "bg-amber-500" },
                 ].map((x) => (
                   <div key={x.l}>
@@ -315,12 +315,12 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
 
             {/* Ick */}
             <div className="glass-card p-4">
-              <h3 className="section-title">🤢 Ick Meter</h3>
+              <h3 className="section-title">🤢 Indice Beurk</h3>
               <div className="flex items-center gap-3 mb-3">
                 <Ring value={features.ickScore} size={56} stroke={4}
                   color={features.ickScore > 60 ? "#ff6b6b" : features.ickScore > 30 ? "#ffa62b" : "#06d6a0"} />
                 <div>
-                  <p className="font-bold text-sm">{features.ickScore > 60 ? "ICK élevé" : features.ickScore > 30 ? "Quelques icks" : "Peu de icks"}</p>
+                  <p className="font-bold text-sm">{features.ickScore > 60 ? "Niveau beurk élevé" : features.ickScore > 30 ? "Quelques beurks" : "Peu de beurks"}</p>
                   <p className="text-[10px] text-dark-400">{features.ickReasons.length} comportements détectés</p>
                 </div>
               </div>
@@ -333,7 +333,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
 
             {/* Momentum */}
             <div className="glass-card p-4">
-              <h3 className="section-title">{features.momentum.emoji} Momentum</h3>
+              <h3 className="section-title">{features.momentum.emoji} Dynamique</h3>
               <p className="text-xs text-dark-600">{features.momentum.description}</p>
             </div>
 
@@ -390,10 +390,10 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
                 <Stat icon="😂" val={p.laughCount} label="Rires" />
                 <Stat icon="❤️" val={p.loveCount} label="Amour" />
                 <Stat icon="🌅" val={p.initiations} label="Initie" />
-                <Stat icon="📱" val={p.doubleTexts} label="Double txt" />
+                <Stat icon="📱" val={p.doubleTexts} label="Relances" />
                 <Stat icon="⏱️" val={`${p.avgResponseTimeMin}m`} label="Rép. moy." />
                 <Stat icon="⚡" val={`${p.fastestResponseMin}m`} label="Plus rapide" />
-                <Stat icon="👻" val={p.ghostCount} label="Ghost" />
+                <Stat icon="👻" val={p.ghostCount} label="Disparitions" />
                 <Stat icon="📅" val={p.activeDays} label="Jours actifs" />
                 <Stat icon="📊" val={p.messagesPerActiveDay} label="Msg/jour" />
                 <Stat icon="🔗" val={p.totalLinks} label="Liens" />
@@ -445,7 +445,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
                         f.severity === "critical" ? "bg-red-500/20 text-red-400" :
                         f.severity === "high" ? "bg-accent-coral/20 text-accent-coral" :
                         f.severity === "medium" ? "bg-accent-orange/20 text-accent-orange" : "bg-accent-sky/20 text-accent-sky"
-                      }`}>{f.severity}</span>
+                      }`}>{f.severity === "critical" ? "Critique" : f.severity === "high" ? "Élevé" : f.severity === "medium" ? "Moyen" : "Faible"}</span>
                     </div>
                     <p className="text-[11px] text-dark-500 mt-1">{f.description}</p>
                     <div className="mt-1.5 h-1 bg-dark-100 rounded-full overflow-hidden">
@@ -465,7 +465,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
 
             {analysis.greenFlags.length > 0 && (
               <>
-                <h2 className="text-sm font-bold text-accent-cyan mt-2">💚 Green Flags ({analysis.greenFlags.length})</h2>
+                <h2 className="text-sm font-bold text-accent-cyan mt-2">💚 Signaux positifs ({analysis.greenFlags.length})</h2>
                 {analysis.greenFlags.map((f) => (
                   <div key={f.id} className="glass-card p-3 border-l-[3px] border-accent-cyan">
                     <div className="flex items-center gap-2">
@@ -483,7 +483,7 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
         {/* ═══ DEEP DIVE ═══ */}
         {tab === "deep" && (
           <>
-            <h2 className="text-base font-bold">🔬 Deep Dive</h2>
+            <h2 className="text-base font-bold">🔬 Analyse approfondie</h2>
 
             <div className="glass-card p-4">
               <h3 className="section-title">⏱️ Temps de réponse</h3>

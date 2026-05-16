@@ -101,7 +101,7 @@ export function detectAttachmentStyle(
       title: "Attachement Sécure",
       description: "Cette personne semble à l'aise dans la relation, ni trop collante ni trop distante.",
       emoji: "🛡️",
-      traits: ["Réponses régulières", "Initiative partagée", "Communication ouverte", "Émotions exprimées"],
+      traits: ["Réponses régulières", "Initiative partagée", "Communication ouverte", "Emotions exprimées"],
       score: secureScore,
     };
   }
@@ -111,7 +111,7 @@ export function detectAttachmentStyle(
       title: "Attachement Anxieux",
       description: "Cette personne montre des signes d'anxiété relationnelle : relances fréquentes, besoin de validation.",
       emoji: "💫",
-      traits: ["Double-texting fréquent", "Réponses très rapides", "Beaucoup d'affection", "Initie souvent"],
+      traits: ["Relances fréquentes", "Réponses très rapides", "Beaucoup d'affection", "Initie souvent"],
       score: anxiousScore,
     };
   }
@@ -121,7 +121,7 @@ export function detectAttachmentStyle(
       title: "Attachement Évitant",
       description: "Cette personne garde ses distances : réponses lentes, peu d'initiative, messages courts.",
       emoji: "🏃",
-      traits: ["Réponses lentes", "Messages courts", "Peu d'initiative", "Ghosting fréquent"],
+      traits: ["Réponses lentes", "Messages courts", "Peu d'initiative", "Disparitions fréquentes"],
       score: avoidantScore,
     };
   }
@@ -130,7 +130,7 @@ export function detectAttachmentStyle(
     title: "Attachement Désorganisé",
     description: "Comportement imprévisible : parfois très présent(e), parfois absent(e).",
     emoji: "🎭",
-    traits: ["Imprévisible", "Hot & Cold", "Patterns incohérents", "Signaux mixtes"],
+    traits: ["Imprévisible", "Chaud & Froid", "Schémas incohérents", "Signaux mixtes"],
     score: Math.max(anxiousScore, avoidantScore) * 0.7,
   };
 }
@@ -142,16 +142,16 @@ export function detectTexterType(stats: PersonStats): TexterTypeResult {
       title: "Le Romancier",
       description: "Écrit des pavés, détaille tout, ne laisse rien au hasard.",
       emoji: "📚",
-      traits: ["Messages longs", "Expressif", "Détaillé", "Storyteller"],
+      traits: ["Messages longs", "Expressif", "Détaillé", "Conteur"],
     };
   }
   if (stats.avgWordsPerMessage < 3 && stats.totalEmojis < 5) {
     return {
       type: "dry-texter",
-      title: "Le Dry Texter",
+      title: "Le Sécheur",
       description: "Réponses sèches, minimum syndical. 'Ok', 'Ouais', 'Mdr'.",
       emoji: "🏜️",
-      traits: ["Ultra court", "Peu expressif", "Minimum effort", "Froid"],
+      traits: ["Ultra court", "Peu expressif", "Effort minimum", "Froid"],
     };
   }
   if (stats.ghostCount > 8) {
@@ -160,16 +160,16 @@ export function detectTexterType(stats: PersonStats): TexterTypeResult {
       title: "Le Fantôme",
       description: "Disparaît pendant des jours, puis réapparaît comme si de rien n'était.",
       emoji: "👻",
-      traits: ["Disparitions", "Imprévisible", "Intermittent", "Mystérieux"],
+      traits: ["Disparaît souvent", "Imprévisible", "Intermittent", "Mystérieux"],
     };
   }
   if (stats.avgEmojisPerMessage > 2) {
     return {
       type: "emoji-addict",
-      title: "L'Emoji Addict",
+      title: "L'Accro aux Emojis",
       description: "Un message sans emoji ? Impossible. Chaque phrase a son lot de smileys.",
       emoji: "🤩",
-      traits: ["Emoji partout", "Expressif visuellement", "Fun", "Coloré"],
+      traits: ["Emoji partout", "Expressif visuellement", "Amusant", "Coloré"],
     };
   }
   if (stats.totalQuestions > stats.totalMessages * 0.3) {
@@ -178,7 +178,7 @@ export function detectTexterType(stats: PersonStats): TexterTypeResult {
       title: "L'Interrogateur",
       description: "Pose beaucoup de questions, veut tout savoir. Curieux ou contrôlant ?",
       emoji: "🔍",
-      traits: ["Curieux", "Beaucoup de questions", "Intéressé", "Investigateur"],
+      traits: ["Curieux", "Beaucoup de questions", "Intéressé", "Enquêteur"],
     };
   }
   return {

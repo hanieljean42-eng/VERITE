@@ -328,8 +328,8 @@ const RELATION_LABELS: Record<RelationType, string> = {
   partner: "Partenaire",
   friend: "Ami(e)",
   bestfriend: "Meilleur(e) ami(e)",
-  situationship: "Situationship",
-  talking: "Talking stage",
+  situationship: "Relation floue",
+  talking: "Phase d'approche",
 };
 
 const RELATION_CONTEXT: Record<RelationType, { romantic: boolean; expectEffort: boolean; expectAffection: boolean }> = {
@@ -448,11 +448,11 @@ function detectRedFlags(
       : relationType === "ex"
       ? `Ton ex disparaît ${other.ghostCount} fois. ${genderLabel} revient quand ça l'arrange.`
       : relationType === "situationship"
-      ? `${genderLabel} disparaît ${other.ghostCount} fois. Typique d'un situationship — ${genderLabel.toLowerCase()} n'est pas engagé(e).`
+      ? `${genderLabel} disparaît ${other.ghostCount} fois. Typique d'une relation floue — ${genderLabel.toLowerCase()} n'est pas engagé(e).`
       : `${genderLabel} a disparu +24h au moins ${other.ghostCount} fois.`;
     flags.push({
       id: "ghosting",
-      title: "Ghosting fréquent",
+      title: "Disparitions fréquentes",
       description: desc,
       severity: other.ghostCount > 15 ? "critical" : "high",
       icon: "👻",
@@ -545,7 +545,7 @@ function detectRedFlags(
   if (relationType === "ex" && other.loveCount > 3 && other.ghostCount > 5) {
     flags.push({
       id: "breadcrumbing",
-      title: "Breadcrumbing",
+      title: "Miettes d'attention",
       description: `Ton ex alterne entre affection (${other.loveCount} msgs doux) et disparitions (${other.ghostCount} ghosts). ${genderLabel} te garde en option.`,
       severity: "critical",
       icon: "🍞",
@@ -581,8 +581,8 @@ function detectRedFlags(
   if (relationType === "situationship" && other.loveCount > 5 && other.ghostCount > 5) {
     flags.push({
       id: "hot-cold",
-      title: "Hot & Cold",
-      description: `${genderLabel} alterne entre moments intenses et disparitions. C'est le signe d'un situationship toxique.`,
+      title: "Chaud & Froid",
+      description: `${genderLabel} alterne entre moments intenses et disparitions. C'est le signe d'une relation floue toxique.`,
       severity: "high",
       icon: "🔥❄️",
       score: 80,
@@ -688,14 +688,14 @@ function generateVerdict(
     const msg = relationType === "crush" ? `🚩 Ton crush ne s'intéresse pas à toi autant que tu t'intéresses à ${g}. Protège-toi.`
       : relationType === "ex" ? `🚩 Ton ex te fait du mal. Trop de red flags — il est temps de couper les ponts.`
       : relationType === "partner" ? `🚩 Ton couple est en danger. ${G} ne fait plus d'efforts. Discussion sérieuse nécessaire.`
-      : relationType === "situationship" ? `🚩 Ce situationship est toxique. ${G} profite de l'ambiguïté. Exige de la clarté.`
+      : relationType === "situationship" ? `🚩 Cette relation floue est toxique. ${G} profite de l'ambiguïté. Exige de la clarté.`
       : `🚩 Trop de red flags. ${G} ne fait pas le même effort que toi.`;
     return { verdict: msg, emoji: "🚩" };
   }
   if (avgScore > 50) {
     const msg = relationType === "crush" ? `Zone grise. Ton crush envoie des signaux mitigés. N'investis pas trop tant que ce n'est pas clair.`
       : relationType === "ex" ? `Signaux mitigés de ton ex. ${G} hésite entre revenir et partir. Ne te fais pas manipuler.`
-      : relationType === "situationship" ? `C'est flou, comme tout situationship. ${G} ne se mouille pas. Pose tes limites.`
+      : relationType === "situationship" ? `C'est flou, comme toute relation floue. ${G} ne se mouille pas. Pose tes limites.`
       : `Zone grise. ${G} montre des signes mitigés. Observe bien.`;
     return { verdict: msg, emoji: "🟡" };
   }

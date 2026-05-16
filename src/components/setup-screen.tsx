@@ -7,8 +7,8 @@ const RELATION_OPTIONS: { id: RelationType; label: string; emoji: string; bg: st
   { id: "crush", label: "Mon crush", emoji: "😍", bg: "linear-gradient(135deg, #f72585, #fb7aaf)" },
   { id: "partner", label: "Mon couple", emoji: "💑", bg: "linear-gradient(135deg, #8b5cf6, #a78bfa)" },
   { id: "ex", label: "Mon ex", emoji: "💔", bg: "linear-gradient(135deg, #ef4444, #f87171)" },
-  { id: "situationship", label: "Situationship", emoji: "🤷", bg: "linear-gradient(135deg, #ffa62b, #fbbf24)" },
-  { id: "talking", label: "Talking stage", emoji: "💬", bg: "linear-gradient(135deg, #4cc9f0, #06b6d4)" },
+  { id: "situationship", label: "Relation floue", emoji: "🤷", bg: "linear-gradient(135deg, #ffa62b, #fbbf24)" },
+  { id: "talking", label: "Phase d'approche", emoji: "💬", bg: "linear-gradient(135deg, #4cc9f0, #06b6d4)" },
   { id: "friend", label: "Ami(e)", emoji: "🤝", bg: "linear-gradient(135deg, #06d6a0, #34d399)" },
   { id: "bestfriend", label: "Meilleur(e) ami(e)", emoji: "🫶", bg: "linear-gradient(135deg, #a855f7, #c084fc)" },
 ];
