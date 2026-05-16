@@ -1,11 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8b5cf6"/>
-      <stop offset="50%" stop-color="#f72585"/>
-      <stop offset="100%" stop-color="#ffa62b"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.3)"/>
+      <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
     </linearGradient>
   </defs>
-  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
-  <text x="96" y="106" text-anchor="middle" font-size="100" font-weight="900" font-family="system-ui,sans-serif" fill="white">V</text>
+  <rect width="192" height="192" rx="44" fill="url(#bg)"/>
+  <rect width="192" height="192" rx="44" fill="url(#shine)"/>
+  <!-- Magnifying glass / truth symbol -->
+  <circle cx="88" cy="82" r="32" fill="none" stroke="white" stroke-width="7" opacity="0.9"/>
+  <line x1="112" y1="106" x2="138" y2="132" stroke="white" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+  <!-- Heart inside the glass -->
+  <path d="M88 72 C82 62, 68 64, 68 76 C68 86, 88 96, 88 96 C88 96, 108 86, 108 76 C108 64, 94 62, 88 72 Z" fill="white" opacity="0.85"/>
+  <!-- Small sparkle -->
+  <circle cx="148" cy="48" r="4" fill="white" opacity="0.7"/>
+  <circle cx="156" cy="56" r="2" fill="white" opacity="0.5"/>
 </svg>

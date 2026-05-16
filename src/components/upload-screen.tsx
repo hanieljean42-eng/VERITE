@@ -365,13 +365,32 @@ function HistorySection() {
     } catch (e) { /* ignore */ }
   }, []);
 
+  const deleteItem = (id: number) => {
+    const updated = history.filter((h: any) => h.id !== id);
+    setHistory(updated);
+    localStorage.setItem("verite-history", JSON.stringify(updated));
+  };
+
+  const clearAll = () => {
+    setHistory([]);
+    localStorage.removeItem("verite-history");
+  };
+
   if (history.length === 0) return null;
 
   return (
     <div className="mt-6 w-full max-w-sm">
-      <p className="text-[11px] font-bold text-dark-400 uppercase tracking-widest mb-3 text-center">
-        📋 Analyses précédentes
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] font-bold text-dark-400 uppercase tracking-widest">
+          📋 Analyses précédentes
+        </p>
+        <button
+          onClick={clearAll}
+          className="text-[10px] text-accent-coral font-bold hover:underline"
+        >
+          Tout supprimer
+        </button>
+      </div>
       <div className="space-y-2">
         {history.map((h: any) => (
           <div key={h.id} className="glass-card px-4 py-3 flex items-center gap-3">
@@ -386,9 +405,17 @@ function HistorySection() {
                 <span>🚩{h.redFlags} 💚{h.greenFlags}</span>
               </div>
             </div>
-            <span className="text-[9px] text-dark-400">
-              {new Date(h.date).toLocaleDateString("fr-FR")}
-            </span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[9px] text-dark-400">
+                {new Date(h.date).toLocaleDateString("fr-FR")}
+              </span>
+              <button
+                onClick={() => deleteItem(h.id)}
+                className="text-[10px] text-accent-coral/70 hover:text-accent-coral font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         ))}
       </div>

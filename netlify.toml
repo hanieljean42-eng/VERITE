@@ -8,6 +8,12 @@
   status = 301
   force = true
 
+[[redirects]]
+  from = "https://verite-app.netlify.app/*"
+  to = "https://ve-rite.app/:splat"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
