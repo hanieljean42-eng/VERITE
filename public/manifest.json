@@ -2,11 +2,15 @@
   "name": "Vérité — Chat Analyzer",
   "short_name": "Vérité",
   "description": "Analyse tes conversations WhatsApp. Red flags, scores, insights.",
-  "start_url": "/",
+  "start_url": "https://ve-rite.app/",
+  "id": "https://ve-rite.app/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f3ff",
+  "background_color": "#ffffff",
   "theme_color": "#8b5cf6",
   "orientation": "portrait",
+  "categories": ["utilities", "lifestyle"],
+  "lang": "fr",
   "icons": [
     {
       "src": "/icons/icon-192.svg",
@@ -21,6 +25,7 @@
       "purpose": "any maskable"
     }
   ],
+  "screenshots": [],
   "share_target": {
     "action": "/share",
     "method": "POST",

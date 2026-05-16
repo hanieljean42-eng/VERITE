@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = "out"
 
+[[redirects]]
+  from = "https://www.ve-rite.app/*"
+  to = "https://ve-rite.app/:splat"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
