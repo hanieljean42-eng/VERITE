@@ -317,11 +317,55 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         </div>
       )}
 
+      {/* History */}
+      <HistorySection />
+
       {/* Footer - Powered by */}
       <div className="mt-10 mb-4 text-center">
         <p className="text-[11px] text-dark-400">
           Powered by <strong className="text-dark-600">Haniel_dev</strong>
         </p>
+      </div>
+    </div>
+  );
+}
+
+function HistorySection() {
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const h = JSON.parse(localStorage.getItem("verite-history") || "[]");
+      setHistory(h);
+    } catch (e) { /* ignore */ }
+  }, []);
+
+  if (history.length === 0) return null;
+
+  return (
+    <div className="mt-6 w-full max-w-sm">
+      <p className="text-[11px] font-bold text-dark-400 uppercase tracking-widest mb-3 text-center">
+        📋 Analyses précédentes
+      </p>
+      <div className="space-y-2">
+        {history.map((h: any) => (
+          <div key={h.id} className="glass-card px-4 py-3 flex items-center gap-3">
+            <span className="text-2xl">{h.verdictEmoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-dark-700 truncate">{h.otherName}</p>
+              <div className="flex items-center gap-2 text-[10px] text-dark-500">
+                <span>Score: <strong>{h.globalScore}/100</strong></span>
+                <span>•</span>
+                <span>{h.totalMessages} msgs</span>
+                <span>•</span>
+                <span>🚩{h.redFlags} 💚{h.greenFlags}</span>
+              </div>
+            </div>
+            <span className="text-[9px] text-dark-400">
+              {new Date(h.date).toLocaleDateString("fr-FR")}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

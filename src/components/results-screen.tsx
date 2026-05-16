@@ -2,11 +2,17 @@
 
 import { ChatAnalysis } from "@/lib/analyzer";
 import { FeatureResults } from "@/lib/features";
+import { TemporalPattern, NotableMessage, Milestone, Advice, getScoreLabel } from "@/lib/insights";
 import { useState } from "react";
+import ShareCard from "./share-card";
 
 interface Props {
   analysis: ChatAnalysis;
   features: FeatureResults;
+  patterns: TemporalPattern[];
+  notableMessages: NotableMessage[];
+  milestones: Milestone[];
+  advices: Advice[];
   onReset: () => void;
 }
 
@@ -71,31 +77,57 @@ function MiniChart({ you, other }: { you: number[]; other: number[] }) {
   );
 }
 
-export default function ResultsScreen({ analysis, features, onReset }: Props) {
+export default function ResultsScreen({ analysis, features, patterns, notableMessages, milestones, advices, onReset }: Props) {
   const { you, other, otherGender } = analysis;
-  type Tab = "overview" | "features" | "you" | "other" | "flags" | "deep";
+  type Tab = "overview" | "features" | "you" | "other" | "flags" | "deep" | "timeline" | "conseils";
   const [tab, setTab] = useState<Tab>("overview");
+  const [showShare, setShowShare] = useState(false);
   const gLabel = otherGender === "female" ? "Elle" : "Il";
+  const scoreInfo = getScoreLabel(analysis.globalScore);
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: "overview", label: "Global", icon: "📊" },
     { id: "features", label: "Aperçus", icon: "✨" },
+    { id: "flags", label: "Alertes", icon: "🚩" },
+    { id: "timeline", label: "Timeline", icon: "📅" },
+    { id: "conseils", label: "Conseils", icon: "💡" },
     { id: "you", label: "Toi", icon: "👤" },
     { id: "other", label: other.name.slice(0, 8), icon: otherGender === "female" ? "👩" : "👨" },
-    { id: "flags", label: "Alertes", icon: "🚩" },
     { id: "deep", label: "Profond", icon: "🔬" },
   ];
 
   return (
     <div className="min-h-screen pb-16 max-w-lg mx-auto">
-      {/* Header vibrant */}
+      {showShare && <ShareCard analysis={analysis} onClose={() => setShowShare(false)} />}
+
+      {/* Header with global score */}
       <div className="text-center pt-8 pb-4 px-5">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 animate-float"
-          style={{ background: "linear-gradient(135deg, #8b5cf6, #f72585, #ffa62b)" }}>
-          <span className="text-3xl">{analysis.verdictEmoji}</span>
+        {/* Score global */}
+        <div className="relative w-28 h-28 mx-auto mb-4">
+          <svg className="w-28 h-28 transform -rotate-90">
+            <circle cx="56" cy="56" r="48" stroke="#ede9fe" strokeWidth="8" fill="none" />
+            <circle cx="56" cy="56" r="48" stroke={scoreInfo.color} strokeWidth="8" fill="none"
+              strokeDasharray={`${2 * Math.PI * 48}`}
+              strokeDashoffset={`${2 * Math.PI * 48 * (1 - analysis.globalScore / 100)}`}
+              strokeLinecap="round" className="transition-all duration-1000" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-black" style={{ color: scoreInfo.color }}>{analysis.globalScore}</span>
+            <span className="text-[10px] text-dark-500">/100</span>
+          </div>
         </div>
-        <h1 className="text-2xl font-black gradient-text">Vérité Résumé</h1>
+        <p className="text-lg font-bold" style={{ color: scoreInfo.color }}>{scoreInfo.emoji} {scoreInfo.label}</p>
+        <h1 className="text-xl font-black gradient-text mt-1">Vérité Résumé</h1>
         <p className="text-dark-500 text-sm mt-2 leading-snug px-2">{analysis.verdict}</p>
+
+        {/* Share button */}
+        <button
+          onClick={() => setShowShare(true)}
+          className="mt-3 inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold text-white"
+          style={{ background: "linear-gradient(135deg, #8b5cf6, #f72585)" }}
+        >
+          📤 Partager en Story
+        </button>
       </div>
 
       {/* Score rings - 2x2 grid mobile */}
@@ -546,6 +578,132 @@ export default function ResultsScreen({ analysis, features, onReset }: Props) {
                 <div className="flex justify-between"><span className="text-dark-400">Série actuelle</span><span>{analysis.currentStreak}j</span></div>
                 <div className="flex justify-between"><span className="text-dark-400">Jour pic</span><span>{DAY_NAMES[analysis.peakDay]}</span></div>
               </div>
+            </div>
+          </>
+        )}
+
+        {/* ═══ TIMELINE TAB ═══ */}
+        {tab === "timeline" && (
+          <>
+            <h2 className="text-base font-bold">📅 Chronologie</h2>
+
+            {/* Milestones */}
+            {milestones.length > 0 && (
+              <div className="glass-card p-4">
+                <h3 className="section-title">🏆 Jalons</h3>
+                <div className="relative pl-6 border-l-2 border-verite-200 space-y-4">
+                  {milestones.map((m, i) => (
+                    <div key={i} className="relative">
+                      <div className="absolute -left-[25px] w-4 h-4 rounded-full bg-verite-500 flex items-center justify-center">
+                        <span className="text-[8px]">{m.emoji}</span>
+                      </div>
+                      <p className="text-xs font-bold text-dark-700">{m.emoji} {m.title}</p>
+                      <p className="text-[10px] text-dark-500">{m.description}</p>
+                      <p className="text-[9px] text-dark-400 mt-0.5">{m.date.toLocaleDateString("fr-FR")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Temporal patterns */}
+            {patterns.length > 0 && (
+              <div className="glass-card p-4">
+                <h3 className="section-title">🔍 Patterns détectés</h3>
+                <div className="space-y-2">
+                  {patterns.map((p) => (
+                    <div key={p.id} className={`px-3 py-2.5 rounded-xl border-l-[3px] ${
+                      p.type === "positive" ? "border-accent-cyan bg-accent-cyan/5" :
+                      p.type === "negative" ? "border-accent-coral bg-accent-coral/5" :
+                      "border-dark-200 bg-dark-50"
+                    }`}>
+                      <p className="text-xs font-bold text-dark-700">{p.emoji} {p.title}</p>
+                      <p className="text-[10px] text-dark-500 mt-0.5">{p.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notable messages */}
+            {notableMessages.length > 0 && (
+              <div className="glass-card p-4">
+                <h3 className="section-title">💬 Messages marquants</h3>
+                <div className="space-y-2.5">
+                  {notableMessages.map((m, i) => (
+                    <div key={i} className="bg-dark-50 rounded-2xl p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-verite-100 text-verite-600 font-bold">
+                          {m.label}
+                        </span>
+                        <span className="text-[9px] text-dark-400">{m.date.toLocaleDateString("fr-FR")}</span>
+                      </div>
+                      <p className="text-[11px] text-dark-600 italic">"{m.text}"</p>
+                      <p className="text-[9px] text-dark-400 mt-1">— {m.sender}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {patterns.length === 0 && milestones.length === 0 && notableMessages.length === 0 && (
+              <div className="glass-card p-8 text-center">
+                <span className="text-4xl">📅</span>
+                <p className="text-dark-500 text-sm mt-2">Pas assez de données pour la timeline</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ═══ CONSEILS TAB ═══ */}
+        {tab === "conseils" && (
+          <>
+            <h2 className="text-base font-bold">💡 Conseils personnalisés</h2>
+
+            {advices.length > 0 ? (
+              <div className="space-y-2.5">
+                {advices.map((a, i) => (
+                  <div key={i} className={`glass-card p-4 border-l-[3px] ${
+                    a.type === "warning" ? "border-red-400" :
+                    a.type === "tip" ? "border-verite-500" :
+                    "border-accent-cyan"
+                  }`}>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-xl flex-shrink-0">{a.emoji}</span>
+                      <div>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
+                          a.type === "warning" ? "bg-red-100 text-red-600" :
+                          a.type === "tip" ? "bg-verite-100 text-verite-600" :
+                          "bg-accent-cyan/20 text-accent-cyan"
+                        }`}>
+                          {a.type === "warning" ? "Attention" : a.type === "tip" ? "Conseil" : "Positif"}
+                        </span>
+                        <p className="text-[11px] text-dark-600 mt-1.5 leading-relaxed">{a.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="glass-card p-8 text-center">
+                <span className="text-4xl">✅</span>
+                <p className="text-dark-500 text-sm mt-2">Rien de spécial à signaler. Continue comme ça !</p>
+              </div>
+            )}
+
+            {/* General tips based on relation type */}
+            <div className="glass-card p-4 mt-2" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.06), rgba(247,37,133,0.04))" }}>
+              <h3 className="text-xs font-bold text-dark-700 mb-2">📌 Règle d'or</h3>
+              <p className="text-[11px] text-dark-600 leading-relaxed">
+                {analysis.relationType === "crush"
+                  ? "Avec un crush, observe plus que tu n'agis. Si tu dois te convaincre que la personne s'intéresse à toi, c'est qu'elle ne s'intéresse probablement pas."
+                  : analysis.relationType === "ex"
+                  ? "Avec un(e) ex, le silence est ta meilleure arme. Chaque message que tu envoies renforce son ego et diminue le tien."
+                  : analysis.relationType === "partner"
+                  ? "Dans un couple, la communication est la clé. Mais attention : communiquer ce n'est pas juste parler, c'est écouter."
+                  : "Observe l'effort. Si tu dois te battre pour avoir de l'attention, ce n'est pas de l'amour, c'est du travail."
+                }
+              </p>
             </div>
           </>
         )}

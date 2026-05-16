@@ -1,4 +1,4 @@
-const CACHE_NAME = "verite-v1";
+const CACHE_NAME = "verite-v2";
 const ASSETS = ["/", "/index.html"];
 
 self.addEventListener("install", (e) => {
@@ -45,5 +45,32 @@ self.addEventListener("fetch", (e) => {
   // Network first, fallback to cache
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
+  );
+});
+
+// Push notifications
+self.addEventListener("push", (e) => {
+  const data = e.data ? e.data.json() : {};
+  const title = data.title || "Vérité";
+  const options = {
+    body: data.body || "Nouvelle mise à jour disponible !",
+    icon: "/icons/icon-192.svg",
+    badge: "/icons/icon-192.svg",
+    vibrate: [100, 50, 100],
+    data: { url: data.url || "/" },
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || "/";
+  e.waitUntil(
+    self.clients.matchAll({ type: "window" }).then((clients) => {
+      for (const client of clients) {
+        if (client.url === url && "focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })
   );
 });

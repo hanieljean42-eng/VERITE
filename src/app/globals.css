@@ -119,6 +119,40 @@
 .stagger-4 { animation-delay: 0.2s; opacity: 0; }
 .stagger-5 { animation-delay: 0.25s; opacity: 0; }
 
+@keyframes loading-bar {
+  0% { width: 5%; }
+  30% { width: 45%; }
+  60% { width: 70%; }
+  80% { width: 85%; }
+  100% { width: 95%; }
+}
+
+.loading-bar {
+  animation: loading-bar 3.5s ease-out forwards;
+}
+
 ::-webkit-scrollbar { width: 0; height: 0; }
 
 * { -webkit-tap-highlight-color: transparent; }
+
+/* Dark mode */
+.dark body {
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 30%, #16213e 60%, #0f0f1a 100%);
+  color: #e2e8f0;
+}
+.dark .glass-card {
+  background: rgba(30, 30, 50, 0.9);
+  border-color: rgba(139, 92, 246, 0.15);
+}
+.dark .text-dark-800 { color: #e2e8f0; }
+.dark .text-dark-700 { color: #cbd5e1; }
+.dark .text-dark-600 { color: #94a3b8; }
+.dark .text-dark-500 { color: #64748b; }
+.dark .text-dark-400 { color: #475569; }
+.dark .bg-dark-50 { background: rgba(30, 30, 50, 0.6); }
+.dark .bg-dark-100 { background: rgba(30, 30, 50, 0.8); }
+.dark .bg-white { background: rgba(30, 30, 50, 0.9); }
+.dark .border-dark-100 { border-color: rgba(100, 116, 139, 0.3); }
+.dark .stat-card {
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.95), rgba(26, 26, 46, 0.9));
+}

@@ -83,6 +83,7 @@ export interface ChatAnalysis {
   conversationGaps: { start: Date; end: Date; durationHours: number }[];
   topSharedWords: { word: string; count: number }[];
   emojiWar: { emoji: string; you: number; other: number }[];
+  globalScore: number;
 }
 
 const STOP_WORDS = new Set([
@@ -825,6 +826,9 @@ export function analyzeChat(
   const compatibilityScore = Math.max(0, Math.min(100, 
     50 + greenFlags.length * 10 - redFlags.length * 8 + (ratio > 0.7 && ratio < 1.4 ? 15 : -10)
   ));
+  const globalScore = Math.round(
+    effortScore * 0.3 + compatibilityScore * 0.25 + interestScore * 0.25 + Math.max(0, 100 - toxicityScore) * 0.2
+  );
 
   return {
     you,
@@ -855,5 +859,6 @@ export function analyzeChat(
     conversationGaps: gaps.sort((a, b) => b.durationHours - a.durationHours).slice(0, 10),
     topSharedWords: getWordFrequency(parsed.messages),
     emojiWar,
+    globalScore,
   };
 }

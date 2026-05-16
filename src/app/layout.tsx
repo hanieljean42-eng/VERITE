@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import DarkModeToggle from "@/components/dark-mode-toggle";
 
 export const metadata: Metadata = {
   title: "Vérité — Chat Wrapped & Red Flag Detector",
@@ -35,8 +36,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Vérité" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-screen font-sans">
+      <body className="min-h-screen font-sans" suppressHydrationWarning>
         {children}
+        <DarkModeToggle />
         <script
           dangerouslySetInnerHTML={{
             __html: `
