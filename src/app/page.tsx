@@ -29,9 +29,30 @@ export default function Home() {
   // Listen for files shared from WhatsApp via PWA Share Target
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      const handler = (event: MessageEvent) => {
-        if (event.data?.type === "shared-file" && event.data.text) {
-          handleFileLoaded(event.data.text);
+      const handler = async (event: MessageEvent) => {
+        if (event.data?.type === "shared-file") {
+          const { buffer, fileName } = event.data;
+          if (fileName?.endsWith(".zip")) {
+            // Dynamically import JSZip to handle zip files
+            const JSZip = (await import("jszip")).default;
+            const zip = await JSZip.loadAsync(buffer);
+            let txtContent: string | null = null;
+            for (const [fname, entry] of Object.entries(zip.files)) {
+              if (!entry.dir && (fname.endsWith(".txt") || fname.includes("WhatsApp"))) {
+                txtContent = await entry.async("string");
+                break;
+              }
+            }
+            if (!txtContent) {
+              const files = Object.values(zip.files).filter(f => !f.dir);
+              if (files.length > 0) txtContent = await files[0].async("string");
+            }
+            if (txtContent) handleFileLoaded(txtContent);
+          } else {
+            // Plain text file
+            const text = new TextDecoder("utf-8").decode(buffer);
+            handleFileLoaded(text);
+          }
         }
       };
       navigator.serviceWorker.addEventListener("message", handler);

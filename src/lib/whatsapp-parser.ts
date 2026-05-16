@@ -47,7 +47,9 @@ function extractEmojis(text: string): string[] {
 }
 
 export function parseWhatsAppExport(content: string): ParsedChat {
-  const lines = content.split("\n");
+  // Remove BOM and normalize line endings
+  const cleaned = content.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = cleaned.split("\n");
   const messages: WhatsAppMessage[] = [];
   const participantSet = new Set<string>();
 

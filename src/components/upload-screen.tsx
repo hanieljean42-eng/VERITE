@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
+import JSZip from "jszip";
 
 interface Props {
   onFileLoaded: (content: string) => void;
@@ -35,19 +36,52 @@ export default function UploadScreen({ onFileLoaded }: Props) {
   };
 
   const readFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       setLoading(true);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
+      try {
+        const isZip = file.name.endsWith(".zip") || file.type === "application/zip" || file.type === "application/x-zip-compressed";
+
+        if (isZip) {
+          const arrayBuffer = await file.arrayBuffer();
+          const zip = await JSZip.loadAsync(arrayBuffer);
+          // Find the .txt file inside the zip
+          let txtContent: string | null = null;
+          for (const [filename, zipEntry] of Object.entries(zip.files)) {
+            if (!zipEntry.dir && (filename.endsWith(".txt") || filename.includes("WhatsApp"))) {
+              txtContent = await zipEntry.async("string");
+              break;
+            }
+          }
+          // If no .txt found, try the first file
+          if (!txtContent) {
+            const files = Object.values(zip.files).filter(f => !f.dir);
+            if (files.length > 0) {
+              txtContent = await files[0].async("string");
+            }
+          }
+          setLoading(false);
+          if (txtContent) {
+            onFileLoaded(txtContent);
+          } else {
+            alert("Aucun fichier texte trouvé dans le ZIP.");
+          }
+        } else {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target?.result as string;
+            setLoading(false);
+            onFileLoaded(text);
+          };
+          reader.onerror = () => {
+            setLoading(false);
+            alert("Erreur de lecture du fichier.");
+          };
+          reader.readAsText(file, "utf-8");
+        }
+      } catch (err) {
         setLoading(false);
-        onFileLoaded(text);
-      };
-      reader.onerror = () => {
-        setLoading(false);
-        alert("Erreur de lecture du fichier.");
-      };
-      reader.readAsText(file, "utf-8");
+        alert("Erreur de lecture du fichier. Vérifie que c'est un export WhatsApp valide.");
+      }
     },
     [onFileLoaded]
   );

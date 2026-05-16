@@ -26,14 +26,14 @@ self.addEventListener("fetch", (e) => {
         const data = await e.request.formData();
         const file = data.get("file");
         if (file) {
-          const clients = await self.clients.matchAll({ type: "window" });
-          // Store file text for the client to pick up
-          const text = await file.text();
+          // Read file as ArrayBuffer so client can handle both .txt and .zip
+          const buffer = await file.arrayBuffer();
+          const fileName = file.name || "chat.txt";
           // Wait for client to be ready
           setTimeout(async () => {
             const allClients = await self.clients.matchAll({ type: "window" });
             for (const client of allClients) {
-              client.postMessage({ type: "shared-file", text });
+              client.postMessage({ type: "shared-file", buffer, fileName });
             }
           }, 1500);
         }
