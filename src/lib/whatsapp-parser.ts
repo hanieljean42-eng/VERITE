@@ -100,9 +100,23 @@ export function parseWhatsAppExport(content: string): ParsedChat {
 
   let currentMessage: WhatsAppMessage | null = null;
 
+  // Lines to skip (WhatsApp email headers)
+  const SKIP_PATTERNS = [
+    "historique",
+    "joint à cet email",
+    "attached",
+    "sans les médias",
+    "without media",
+    "Messages and calls are end-to-end",
+    "Les messages et les appels sont chiffrés",
+  ];
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    // Skip email header lines
+    if (SKIP_PATTERNS.some(p => line.toLowerCase().includes(p.toLowerCase()))) continue;
 
     // Try each regex pattern
     let match: RegExpMatchArray | null = null;

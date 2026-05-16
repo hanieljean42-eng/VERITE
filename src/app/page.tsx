@@ -19,13 +19,16 @@ export default function Home() {
   const handleFileLoaded = useCallback((content: string) => {
     const result = parseWhatsAppExport(content);
     if (result.messages.length === 0) {
-      // Show first lines to help debug
-      const preview = content.substring(0, 300).replace(/[^\x20-\x7E\u00C0-\u017F\n]/g, "?");
-      alert(
-        `Aucun message trouvé dans ce fichier.\n\n` +
-        `Aperçu du contenu :\n${preview}\n\n` +
-        `Assure-toi que c'est un export WhatsApp (.txt ou .zip).`
-      );
+      const preview = content.substring(0, 200).replace(/[^\x20-\x7E\u00C0-\u017F\n]/g, "?");
+      const isEmailBody = content.toLowerCase().includes("joint à cet email") || content.toLowerCase().includes("historique");
+      const msg = isEmailBody
+        ? `⚠️ Tu as uploadé le CORPS de l'email, pas la pièce jointe !\n\n` +
+          `Quand WhatsApp exporte par email, le vrai fichier de discussion est en PIÈCE JOINTE (.txt ou .zip).\n\n` +
+          `➡️ Ouvre l'email, télécharge la pièce jointe, puis uploade-la ici.`
+        : `Aucun message trouvé dans ce fichier.\n\n` +
+          `Aperçu :\n${preview}\n\n` +
+          `Assure-toi d'uploader le fichier .txt ou .zip exporté depuis WhatsApp.`;
+      alert(msg);
       return;
     }
     setParsed(result);
