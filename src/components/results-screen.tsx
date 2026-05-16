@@ -710,7 +710,7 @@ export default function ResultsScreen({ analysis, features, patterns, notableMes
       </div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4" style={{ background: "linear-gradient(to top, #f5f3ff, rgba(245,243,255,0.9), transparent)" }}>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#0b0b14]/95">
         <button onClick={onReset}
           className="btn-primary w-full max-w-sm mx-auto block py-3 text-sm active:scale-[0.97]">
           🔄 Nouvelle analyse

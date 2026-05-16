@@ -42,6 +42,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              try{if(localStorage.getItem("verite-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}
               if ("serviceWorker" in navigator) {
                 navigator.serviceWorker.register("/sw.js").then(r => console.log("SW registered", r.scope));
               }

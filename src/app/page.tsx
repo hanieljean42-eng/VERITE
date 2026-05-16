@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { parseWhatsAppExport, ParsedChat } from "@/lib/whatsapp-parser";
 import { analyzeChat, ChatAnalysis, Gender, RelationType } from "@/lib/analyzer";
 import { computeAllFeatures, FeatureResults } from "@/lib/features";
 import { detectTemporalPatterns, extractNotableMessages, detectMilestones, generateAdvice, TemporalPattern, NotableMessage, Milestone, Advice } from "@/lib/insights";
 import UploadScreen from "@/components/upload-screen";
 import SetupScreen from "@/components/setup-screen";
-import ResultsScreen from "@/components/results-screen";
-import Onboarding from "@/components/onboarding";
-import CompareScreen from "@/components/compare-screen";
+
+const ResultsScreen = lazy(() => import("@/components/results-screen"));
+const Onboarding = lazy(() => import("@/components/onboarding"));
+const CompareScreen = lazy(() => import("@/components/compare-screen"));
 
 type Step = "onboarding" | "upload" | "setup" | "loading" | "results" | "compare";
+
+function MiniLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-verite-200 border-t-verite-500 animate-spin" />
+    </div>
+  );
+}
 
 export default function Home() {
   const [step, setStep] = useState<Step>("upload");
@@ -130,28 +139,30 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen dark:bg-[#0f0f1a]">
-      {step === "onboarding" && <Onboarding onComplete={() => setStep("upload")} />}
-      {step === "upload" && <UploadScreen onFileLoaded={handleFileLoaded} onCompare={() => setStep("compare")} />}
-      {step === "compare" && <CompareScreen onBack={() => setStep("upload")} />}
-      {step === "setup" && parsed && (
-        <SetupScreen
-          participants={parsed.participants}
-          onComplete={handleSetupComplete}
-        />
-      )}
-      {step === "loading" && <LoadingScreen msgIndex={loadingMsg} />}
-      {step === "results" && analysis && features && (
-        <ResultsScreen
-          analysis={analysis}
-          features={features}
-          patterns={patterns}
-          notableMessages={notableMessages}
-          milestones={milestones}
-          advices={advices}
-          onReset={handleReset}
-        />
-      )}
+    <main className="min-h-screen">
+      <Suspense fallback={<MiniLoader />}>
+        {step === "onboarding" && <Onboarding onComplete={() => setStep("upload")} />}
+        {step === "upload" && <UploadScreen onFileLoaded={handleFileLoaded} onCompare={() => setStep("compare")} />}
+        {step === "compare" && <CompareScreen onBack={() => setStep("upload")} />}
+        {step === "setup" && parsed && (
+          <SetupScreen
+            participants={parsed.participants}
+            onComplete={handleSetupComplete}
+          />
+        )}
+        {step === "loading" && <LoadingScreen msgIndex={loadingMsg} />}
+        {step === "results" && analysis && features && (
+          <ResultsScreen
+            analysis={analysis}
+            features={features}
+            patterns={patterns}
+            notableMessages={notableMessages}
+            milestones={milestones}
+            advices={advices}
+            onReset={handleReset}
+          />
+        )}
+      </Suspense>
     </main>
   );
 }
