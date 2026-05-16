@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Vérité — Ton crush t'aime vraiment ?",
     description: "Analyse tes conversations WhatsApp pour détecter les red flags, calculer les scores et découvrir la vérité.",
-    url: "https://verite-app.netlify.app",
+    url: "https://ve-rite.app",
     siteName: "Vérité",
     locale: "fr_FR",
     type: "website",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Vérité",
   },
-  metadataBase: new URL("https://verite-app.netlify.app"),
+  metadataBase: new URL("https://ve-rite.app"),
 };
 
 export const viewport: Viewport = {
