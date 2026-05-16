@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { parseWhatsAppExport, ParsedChat } from "@/lib/whatsapp-parser";
-import { analyzeChat, ChatAnalysis, Gender } from "@/lib/analyzer";
+import { analyzeChat, ChatAnalysis, Gender, RelationType } from "@/lib/analyzer";
 import { computeAllFeatures, FeatureResults } from "@/lib/features";
 import UploadScreen from "@/components/upload-screen";
 import SetupScreen from "@/components/setup-screen";
@@ -61,11 +61,11 @@ export default function Home() {
   }, [handleFileLoaded]);
 
   const handleSetupComplete = useCallback(
-    (youName: string, otherName: string, otherGender: Gender) => {
+    (youName: string, otherName: string, otherGender: Gender, relationType: RelationType) => {
       if (!parsed) return;
       setStep("loading");
       setTimeout(() => {
-        const result = analyzeChat(parsed, youName, otherName, otherGender);
+        const result = analyzeChat(parsed, youName, otherName, otherGender, relationType);
         const feat = computeAllFeatures(result);
         setAnalysis(result);
         setFeatures(feat);

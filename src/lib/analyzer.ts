@@ -1,6 +1,7 @@
 import { WhatsAppMessage, ParsedChat } from "./whatsapp-parser";
 
 export type Gender = "male" | "female";
+export type RelationType = "crush" | "ex" | "partner" | "friend" | "bestfriend" | "situationship" | "talking";
 
 export interface PersonStats {
   name: string;
@@ -57,6 +58,7 @@ export interface ChatAnalysis {
   you: PersonStats;
   other: PersonStats;
   otherGender: Gender;
+  relationType: RelationType;
   totalMessages: number;
   totalWords: number;
   totalDays: number;
@@ -320,26 +322,58 @@ function buildPersonStats(
   };
 }
 
+const RELATION_LABELS: Record<RelationType, string> = {
+  crush: "Crush",
+  ex: "Ex",
+  partner: "Partenaire",
+  friend: "Ami(e)",
+  bestfriend: "Meilleur(e) ami(e)",
+  situationship: "Situationship",
+  talking: "Talking stage",
+};
+
+const RELATION_CONTEXT: Record<RelationType, { romantic: boolean; expectEffort: boolean; expectAffection: boolean }> = {
+  crush: { romantic: true, expectEffort: false, expectAffection: false },
+  ex: { romantic: true, expectEffort: false, expectAffection: false },
+  partner: { romantic: true, expectEffort: true, expectAffection: true },
+  friend: { romantic: false, expectEffort: false, expectAffection: false },
+  bestfriend: { romantic: false, expectEffort: true, expectAffection: false },
+  situationship: { romantic: true, expectEffort: false, expectAffection: false },
+  talking: { romantic: true, expectEffort: false, expectAffection: false },
+};
+
 function detectRedFlags(
   you: PersonStats,
   other: PersonStats,
   otherGender: Gender,
+  relationType: RelationType,
   messages: WhatsAppMessage[]
 ): RedFlag[] {
   const flags: RedFlag[] = [];
   const genderLabel = otherGender === "female" ? "Elle" : "Il";
+  const ctx = RELATION_CONTEXT[relationType];
+  const rl = RELATION_LABELS[relationType];
 
   const ratio =
     you.totalMessages > 0 ? other.totalMessages / you.totalMessages : 0;
 
+  // Effort imbalance — more concerning for crush/partner/talking
   if (ratio < 0.4) {
+    const severity = ctx.romantic ? "high" : "medium";
+    const desc = relationType === "crush"
+      ? `Tu envoies ${Math.round((1 / ratio) * 10) / 10}x plus de messages. Ton crush ne fait clairement pas le même effort — c'est révélateur.`
+      : relationType === "ex"
+      ? `Tu envoies ${Math.round((1 / ratio) * 10) / 10}x plus de messages à ton ex. Tu n'as pas encore lâché prise.`
+      : relationType === "partner"
+      ? `Tu envoies ${Math.round((1 / ratio) * 10) / 10}x plus de messages. Dans un couple, cet écart est problématique.`
+      : `Tu envoies ${Math.round((1 / ratio) * 10) / 10}x plus de messages que ${genderLabel.toLowerCase()}.`;
     flags.push({
       id: "effort-imbalance",
       title: "Déséquilibre d'effort",
-      description: `Tu envoies ${Math.round((1 / ratio) * 10) / 10}x plus de messages que ${genderLabel.toLowerCase()}. ${genderLabel} ne fait pas le même effort.`,
-      severity: "high",
+      description: desc,
+      severity,
       icon: "⚖️",
-      score: 85,
+      score: ctx.romantic ? 85 : 55,
     });
   } else if (ratio < 0.6) {
     flags.push({
@@ -352,61 +386,98 @@ function detectRedFlags(
     });
   }
 
+  // Slow replies
   if (other.avgResponseTimeMin > you.avgResponseTimeMin * 3 && other.avgResponseTimeMin > 60) {
+    const desc = relationType === "crush"
+      ? `Ton crush répond en ${other.avgResponseTimeMin} min vs toi en ${you.avgResponseTimeMin} min. ${other.avgResponseTimeMin > 180 ? "Signe de désintérêt fort." : "Prudence."}`
+      : relationType === "partner"
+      ? `Ton/ta partenaire répond en ${other.avgResponseTimeMin} min vs toi en ${you.avgResponseTimeMin} min. Ce n'est pas normal dans un couple.`
+      : relationType === "ex"
+      ? `Ton ex répond lentement (${other.avgResponseTimeMin} min). ${genderLabel} prend ses distances, c'est peut-être mieux ainsi.`
+      : `${genderLabel} répond en ${other.avgResponseTimeMin} min vs toi ${you.avgResponseTimeMin} min.`;
     flags.push({
       id: "slow-replies",
       title: `${genderLabel} met du temps à répondre`,
-      description: `${genderLabel} répond en moyenne en ${other.avgResponseTimeMin} min vs toi en ${you.avgResponseTimeMin} min. ${other.avgResponseTimeMin > 180 ? "C'est un signe de désintérêt potentiel." : ""}`,
+      description: desc,
       severity: other.avgResponseTimeMin > 180 ? "high" : "medium",
       icon: "🐌",
       score: other.avgResponseTimeMin > 180 ? 80 : 50,
     });
   }
 
+  // Short replies
   if (other.avgWordsPerMessage < 4 && you.avgWordsPerMessage > 8) {
+    const desc = relationType === "crush"
+      ? `Ton crush envoie ${other.avgWordsPerMessage} mots/msg vs toi ${you.avgWordsPerMessage}. ${genderLabel} ne fait pas d'effort pour te parler.`
+      : relationType === "partner"
+      ? `Ton/ta partenaire envoie ${other.avgWordsPerMessage} mots/msg. C'est inquiétant pour un couple — la communication se dégrade.`
+      : `${genderLabel} envoie ${other.avgWordsPerMessage} mots/msg vs toi ${you.avgWordsPerMessage}. Minimum syndical.`;
     flags.push({
       id: "short-replies",
       title: "Réponses ultra-courtes",
-      description: `${genderLabel} envoie en moyenne ${other.avgWordsPerMessage} mots/message vs toi ${you.avgWordsPerMessage}. ${genderLabel} fait le minimum.`,
-      severity: "high",
+      description: desc,
+      severity: ctx.romantic ? "high" : "medium",
       icon: "📝",
-      score: 75,
+      score: ctx.romantic ? 75 : 45,
     });
   }
 
+  // Double texting
   if (you.doubleTexts + you.tripleTexts > 20 && other.doubleTexts + other.tripleTexts < 5) {
+    const desc = relationType === "crush"
+      ? `Tu relances ${you.doubleTexts + you.tripleTexts} fois sans réponse. Ton crush te laisse en attente — arrête de courir.`
+      : relationType === "ex"
+      ? `Tu relances ton ex ${you.doubleTexts + you.tripleTexts} fois. C'est un signe que tu n'as pas tourné la page.`
+      : `Tu envoies des messages sans réponse ${you.doubleTexts + you.tripleTexts} fois. ${genderLabel} ne relance jamais.`;
     flags.push({
       id: "double-texting",
       title: "Tu relances trop",
-      description: `Tu envoies des messages sans réponse ${you.doubleTexts + you.tripleTexts} fois. ${genderLabel} le fait seulement ${other.doubleTexts + other.tripleTexts} fois.`,
+      description: desc,
       severity: "medium",
       icon: "📱",
-      score: 60,
+      score: relationType === "crush" ? 70 : 60,
     });
   }
 
+  // Ghosting
   if (other.ghostCount > 5) {
+    const desc = relationType === "partner"
+      ? `Ton/ta partenaire a disparu +24h ${other.ghostCount} fois. C'est un manque de respect dans un couple.`
+      : relationType === "crush"
+      ? `Ton crush te ghost ${other.ghostCount} fois. ${genderLabel} n'est clairement pas intéressé(e).`
+      : relationType === "ex"
+      ? `Ton ex disparaît ${other.ghostCount} fois. ${genderLabel} revient quand ça l'arrange.`
+      : relationType === "situationship"
+      ? `${genderLabel} disparaît ${other.ghostCount} fois. Typique d'un situationship — ${genderLabel.toLowerCase()} n'est pas engagé(e).`
+      : `${genderLabel} a disparu +24h au moins ${other.ghostCount} fois.`;
     flags.push({
       id: "ghosting",
       title: "Ghosting fréquent",
-      description: `${genderLabel} a disparu pendant plus de 24h au moins ${other.ghostCount} fois dans cette conversation.`,
+      description: desc,
       severity: other.ghostCount > 15 ? "critical" : "high",
       icon: "👻",
       score: other.ghostCount > 15 ? 95 : 70,
     });
   }
 
+  // Always initiating
   if (you.initiations > other.initiations * 2.5 && you.initiations > 10) {
+    const desc = relationType === "crush"
+      ? `Tu inities ${you.initiations}x vs ton crush ${other.initiations}x. Si ${genderLabel.toLowerCase()} voulait te parler, ${genderLabel.toLowerCase()} le ferait.`
+      : relationType === "partner"
+      ? `Tu commences la conversation ${you.initiations} fois vs ${other.initiations}. Ton/ta partenaire ne pense pas à toi spontanément.`
+      : `Tu inities ${you.initiations} fois vs ${other.initiations}. ${genderLabel} ne prend jamais l'initiative.`;
     flags.push({
       id: "always-initiating",
       title: "Tu commences toujours la conversation",
-      description: `Tu inities la conversation ${you.initiations} fois vs ${genderLabel.toLowerCase()} ${other.initiations} fois. ${genderLabel} ne prend jamais l'initiative.`,
-      severity: "high",
+      description: desc,
+      severity: ctx.romantic ? "high" : "medium",
       icon: "🚩",
-      score: 80,
+      score: ctx.romantic ? 80 : 50,
     });
   }
 
+  // Deleted messages
   if (other.totalDeleted > 10) {
     flags.push({
       id: "deleted-messages",
@@ -418,17 +489,24 @@ function detectRedFlags(
     });
   }
 
-  if (other.loveCount === 0 && you.loveCount > 5) {
+  // No affection — only relevant for romantic relations
+  if (ctx.romantic && other.loveCount === 0 && you.loveCount > 5) {
+    const desc = relationType === "crush"
+      ? `Tu envoies ${you.loveCount} messages affectueux. Ton crush : 0. Les sentiments ne sont pas réciproques.`
+      : relationType === "partner"
+      ? `Tu envoies ${you.loveCount} messages affectueux. Ton/ta partenaire : 0. Où est passée l'affection ?`
+      : `Tu envoies ${you.loveCount} messages affectueux. ${genderLabel} : 0.`;
     flags.push({
       id: "no-love",
       title: "Zéro affection",
-      description: `Tu envoies ${you.loveCount} messages affectueux. ${genderLabel} : 0. Aucune réciprocité émotionnelle.`,
+      description: desc,
       severity: "high",
       icon: "💔",
-      score: 85,
+      score: relationType === "partner" ? 90 : 85,
     });
   }
 
+  // Late night only — more suspicious for crush/situationship
   const otherLateNight = other.messagesByHour
     .slice(23)
     .concat(other.messagesByHour.slice(0, 5))
@@ -437,28 +515,77 @@ function detectRedFlags(
     .slice(8, 20)
     .reduce((a, b) => a + b, 0);
 
-  if (
-    otherLateNight > otherDaytime * 0.5 &&
-    otherLateNight > 20
-  ) {
+  if (otherLateNight > otherDaytime * 0.5 && otherLateNight > 20) {
+    const desc = relationType === "crush" || relationType === "situationship"
+      ? `${genderLabel} t'écrit surtout entre 23h et 5h. Tu es un plan B nocturne, pas une priorité.`
+      : `${genderLabel} t'écrit surtout entre 23h et 5h.`;
     flags.push({
       id: "late-night-only",
       title: "Messages uniquement la nuit",
-      description: `${genderLabel} t'écrit surtout entre 23h et 5h. Tu es peut-être un plan B nocturne.`,
-      severity: "medium",
+      description: desc,
+      severity: ctx.romantic ? "high" : "medium",
       icon: "🌙",
-      score: 65,
+      score: relationType === "situationship" ? 75 : 65,
     });
   }
 
+  // No curiosity
   if (other.totalQuestions < you.totalQuestions * 0.3 && you.totalQuestions > 10) {
     flags.push({
       id: "no-curiosity",
       title: `${genderLabel} ne te pose jamais de questions`,
-      description: `Tu poses ${you.totalQuestions} questions vs ${genderLabel.toLowerCase()} seulement ${other.totalQuestions}. ${genderLabel} ne s'intéresse pas à ta vie.`,
+      description: `Tu poses ${you.totalQuestions} questions vs ${other.totalQuestions}. ${genderLabel} ne s'intéresse pas à ta vie.`,
       severity: "medium",
       icon: "❓",
       score: 60,
+    });
+  }
+
+  // Ex-specific: breadcrumbing
+  if (relationType === "ex" && other.loveCount > 3 && other.ghostCount > 5) {
+    flags.push({
+      id: "breadcrumbing",
+      title: "Breadcrumbing",
+      description: `Ton ex alterne entre affection (${other.loveCount} msgs doux) et disparitions (${other.ghostCount} ghosts). ${genderLabel} te garde en option.`,
+      severity: "critical",
+      icon: "🍞",
+      score: 90,
+    });
+  }
+
+  // Crush-specific: you're way more invested
+  if (relationType === "crush" && you.loveCount > 10 && other.loveCount < 2) {
+    flags.push({
+      id: "unrequited",
+      title: "Sentiments à sens unique",
+      description: `Tu montres tes sentiments (${you.loveCount} msgs affectueux) mais ton crush ne réagit pas (${other.loveCount}). Ce n'est pas réciproque.`,
+      severity: "critical",
+      icon: "💘",
+      score: 92,
+    });
+  }
+
+  // Partner-specific: conversation dying
+  if (relationType === "partner" && other.avgWordsPerMessage < 5 && other.initiations < you.initiations * 0.3) {
+    flags.push({
+      id: "dying-relationship",
+      title: "La communication se meurt",
+      description: `Messages courts + aucune initiative de ton/ta partenaire. La relation perd en qualité.`,
+      severity: "critical",
+      icon: "📉",
+      score: 88,
+    });
+  }
+
+  // Situationship-specific
+  if (relationType === "situationship" && other.loveCount > 5 && other.ghostCount > 5) {
+    flags.push({
+      id: "hot-cold",
+      title: "Hot & Cold",
+      description: `${genderLabel} alterne entre moments intenses et disparitions. C'est le signe d'un situationship toxique.`,
+      severity: "high",
+      icon: "🔥❄️",
+      score: 80,
     });
   }
 
@@ -529,7 +656,8 @@ function detectGreenFlags(
 function generateVerdict(
   redFlags: RedFlag[],
   greenFlags: GreenFlag[],
-  otherGender: Gender
+  otherGender: Gender,
+  relationType: RelationType
 ): { verdict: string; emoji: string } {
   const maxSeverity = redFlags.length
     ? Math.max(...redFlags.map((f) => f.score))
@@ -537,31 +665,55 @@ function generateVerdict(
   const avgScore = redFlags.length
     ? redFlags.reduce((s, f) => s + f.score, 0) / redFlags.length
     : 0;
-  const genderLabel = otherGender === "female" ? "elle" : "il";
+  const G = otherGender === "female" ? "Elle" : "Il";
+  const g = otherGender === "female" ? "elle" : "il";
 
+  // Relation-specific verdicts
   if (redFlags.length === 0 && greenFlags.length >= 3) {
-    return { verdict: `C'est du solide ! ${otherGender === "female" ? "Elle" : "Il"} est investi(e) autant que toi. Cette connexion est réelle.`, emoji: "💚" };
+    const msg = relationType === "crush" ? `Ton crush est réceptif ! ${G} fait des efforts. Fonce !`
+      : relationType === "ex" ? `Surprenant — ton ex montre encore des signes positifs. Mais reste prudent(e).`
+      : relationType === "partner" ? `Votre couple est solide ! Communication saine, efforts mutuels. 💪`
+      : relationType === "friend" ? `Une vraie amitié ! Vous êtes sur la même longueur d'onde.`
+      : relationType === "bestfriend" ? `C'est ça un(e) meilleur(e) ami(e) ! Relation au top. 🫶`
+      : `C'est du solide ! ${G} est investi(e) autant que toi.`;
+    return { verdict: msg, emoji: "💚" };
   }
   if (redFlags.length <= 1 && greenFlags.length >= 2) {
-    return { verdict: `Globalement positif. Quelques points d'attention mais ${genderLabel} semble sincère.`, emoji: "💛" };
+    const msg = relationType === "crush" ? `Signaux plutôt positifs de ton crush. Continue d'observer mais c'est encourageant.`
+      : relationType === "partner" ? `Votre couple va bien. Quelques points d'attention mineurs.`
+      : `Globalement positif. ${g} semble sincère.`;
+    return { verdict: msg, emoji: "💛" };
   }
   if (avgScore > 75) {
-    return { verdict: `Attention ! Trop de red flags. ${otherGender === "female" ? "Elle" : "Il"} ne fait pas le même effort que toi. Tu mérites mieux.`, emoji: "🚩" };
+    const msg = relationType === "crush" ? `🚩 Ton crush ne s'intéresse pas à toi autant que tu t'intéresses à ${g}. Protège-toi.`
+      : relationType === "ex" ? `🚩 Ton ex te fait du mal. Trop de red flags — il est temps de couper les ponts.`
+      : relationType === "partner" ? `🚩 Ton couple est en danger. ${G} ne fait plus d'efforts. Discussion sérieuse nécessaire.`
+      : relationType === "situationship" ? `🚩 Ce situationship est toxique. ${G} profite de l'ambiguïté. Exige de la clarté.`
+      : `🚩 Trop de red flags. ${G} ne fait pas le même effort que toi.`;
+    return { verdict: msg, emoji: "🚩" };
   }
   if (avgScore > 50) {
-    return { verdict: `Zone grise. ${otherGender === "female" ? "Elle" : "Il"} montre des signes mitigés. Observe bien avant de t'investir davantage.`, emoji: "🟡" };
+    const msg = relationType === "crush" ? `Zone grise. Ton crush envoie des signaux mitigés. N'investis pas trop tant que ce n'est pas clair.`
+      : relationType === "ex" ? `Signaux mitigés de ton ex. ${G} hésite entre revenir et partir. Ne te fais pas manipuler.`
+      : relationType === "situationship" ? `C'est flou, comme tout situationship. ${G} ne se mouille pas. Pose tes limites.`
+      : `Zone grise. ${G} montre des signes mitigés. Observe bien.`;
+    return { verdict: msg, emoji: "🟡" };
   }
   if (maxSeverity > 80) {
-    return { verdict: `Red flag critique détecté. ${otherGender === "female" ? "Elle" : "Il"} ne te traite pas comme tu le mérites.`, emoji: "❌" };
+    const msg = relationType === "crush" ? `Red flag critique. Ton crush ne mérite pas ton énergie.`
+      : relationType === "partner" ? `Red flag critique dans ton couple. ${G} ne te traite pas correctement.`
+      : `Red flag critique détecté. ${G} ne te traite pas comme tu le mérites.`;
+    return { verdict: msg, emoji: "❌" };
   }
-  return { verdict: `Résultats mixtes. Prends du recul et observe les prochaines semaines.`, emoji: "🤔" };
+  return { verdict: `Résultats mixtes. Prends du recul et observe.`, emoji: "🤔" };
 }
 
 export function analyzeChat(
   parsed: ParsedChat,
   youName: string,
   otherName: string,
-  otherGender: Gender
+  otherGender: Gender,
+  relationType: RelationType = "crush"
 ): ChatAnalysis {
   const yourMessages = parsed.messages.filter((m) => m.sender === youName);
   const otherMessages = parsed.messages.filter((m) => m.sender === otherName);
@@ -664,9 +816,9 @@ export function analyzeChat(
     .sort((a, b) => b.you + b.other - (a.you + a.other))
     .slice(0, 8);
 
-  const redFlags = detectRedFlags(you, other, otherGender, parsed.messages);
+  const redFlags = detectRedFlags(you, other, otherGender, relationType, parsed.messages);
   const greenFlags = detectGreenFlags(you, other, otherGender);
-  const { verdict, emoji: verdictEmoji } = generateVerdict(redFlags, greenFlags, otherGender);
+  const { verdict, emoji: verdictEmoji } = generateVerdict(redFlags, greenFlags, otherGender, relationType);
 
   const interestScore = Math.max(0, Math.min(100, effortScore + greenFlags.length * 8 - redFlags.length * 12));
   const toxicityScore = Math.min(100, redFlags.reduce((s, f) => s + f.score, 0) / Math.max(1, redFlags.length));
@@ -678,6 +830,7 @@ export function analyzeChat(
     you,
     other,
     otherGender,
+    relationType,
     totalMessages: parsed.messages.length,
     totalWords: you.totalWords + other.totalWords,
     totalDays,
