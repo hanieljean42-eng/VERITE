@@ -5,9 +5,10 @@ import JSZip from "jszip";
 
 interface Props {
   onFileLoaded: (content: string) => void;
+  onCompare?: () => void;
 }
 
-export default function UploadScreen({ onFileLoaded }: Props) {
+export default function UploadScreen({ onFileLoaded, onCompare }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -199,6 +200,22 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         )}
       </div>
 
+      {/* Compare button */}
+      {onCompare && (
+        <button
+          onClick={onCompare}
+          className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-[0.96]"
+          style={{
+            background: "linear-gradient(135deg, rgba(6,214,160,0.1), rgba(52,211,153,0.06))",
+            border: "1px solid rgba(6,214,160,0.3)",
+            color: "#06d6a0",
+          }}
+        >
+          <span className="text-lg">⚔️</span>
+          Comparer 2 conversations
+        </button>
+      )}
+
       {/* Guide button */}
       <button
         onClick={() => setShowGuide(!showGuide)}
@@ -317,11 +334,19 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         </div>
       )}
 
+      {/* Notification permission */}
+      <NotificationBanner />
+
       {/* History */}
       <HistorySection />
 
+      {/* Guide link */}
+      <a href="/guide" className="mt-6 flex items-center gap-2 text-xs text-dark-400 hover:text-verite-500 transition-colors">
+        📖 Guide complet d'utilisation
+      </a>
+
       {/* Footer - Powered by */}
-      <div className="mt-10 mb-4 text-center">
+      <div className="mt-8 mb-4 text-center">
         <p className="text-[11px] text-dark-400">
           Powered by <strong className="text-dark-600">Haniel_dev</strong>
         </p>
@@ -366,6 +391,59 @@ function HistorySection() {
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function NotificationBanner() {
+  const [permission, setPermission] = useState<string>("default");
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setPermission(Notification.permission);
+    }
+    if (localStorage.getItem("verite-notif-dismissed")) {
+      setDismissed(true);
+    }
+  }, []);
+
+  const handleAllow = async () => {
+    try {
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      if (result === "granted") {
+        new Notification("Vérité", {
+          body: "Notifications activées ! Tu seras prévenu(e) des mises à jour.",
+          icon: "/icons/icon-192.svg",
+        });
+      }
+    } catch (e) { /* ignore */ }
+  };
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem("verite-notif-dismissed", "true");
+  };
+
+  if (permission !== "default" || dismissed || !("Notification" in (typeof window !== "undefined" ? window : {}))) return null;
+
+  return (
+    <div className="mt-6 w-full max-w-sm glass-card p-4 text-center"
+      style={{ background: "linear-gradient(135deg, rgba(6,214,160,0.08), rgba(52,211,153,0.05))" }}>
+      <p className="text-sm font-bold text-dark-700 mb-1">🔔 Reste informé(e)</p>
+      <p className="text-xs text-dark-500 mb-3">Active les notifications pour ne rien rater</p>
+      <div className="flex gap-2 justify-center">
+        <button onClick={handleAllow}
+          className="px-5 py-2 rounded-xl text-xs font-bold text-white"
+          style={{ background: "linear-gradient(135deg, #06d6a0, #34d399)" }}>
+          Activer
+        </button>
+        <button onClick={handleDismiss}
+          className="px-5 py-2 rounded-xl text-xs font-bold text-dark-500 bg-dark-50">
+          Plus tard
+        </button>
       </div>
     </div>
   );

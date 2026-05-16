@@ -9,8 +9,9 @@ import UploadScreen from "@/components/upload-screen";
 import SetupScreen from "@/components/setup-screen";
 import ResultsScreen from "@/components/results-screen";
 import Onboarding from "@/components/onboarding";
+import CompareScreen from "@/components/compare-screen";
 
-type Step = "onboarding" | "upload" | "setup" | "loading" | "results";
+type Step = "onboarding" | "upload" | "setup" | "loading" | "results" | "compare";
 
 export default function Home() {
   const [step, setStep] = useState<Step>("upload");
@@ -131,7 +132,8 @@ export default function Home() {
   return (
     <main className="min-h-screen dark:bg-[#0f0f1a]">
       {step === "onboarding" && <Onboarding onComplete={() => setStep("upload")} />}
-      {step === "upload" && <UploadScreen onFileLoaded={handleFileLoaded} />}
+      {step === "upload" && <UploadScreen onFileLoaded={handleFileLoaded} onCompare={() => setStep("compare")} />}
+      {step === "compare" && <CompareScreen onBack={() => setStep("upload")} />}
       {step === "setup" && parsed && (
         <SetupScreen
           participants={parsed.participants}
