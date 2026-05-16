@@ -7,11 +7,29 @@ export const metadata: Metadata = {
   description:
     "Analyse tes conversations WhatsApp. Découvre la vérité derrière chaque message.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/icons/icon-192.svg",
+  },
+  openGraph: {
+    title: "Vérité — Ton crush t'aime vraiment ?",
+    description: "Analyse tes conversations WhatsApp pour détecter les red flags, calculer les scores et découvrir la vérité.",
+    url: "https://verite-app.netlify.app",
+    siteName: "Vérité",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vérité — Analyse WhatsApp",
+    description: "Red flags, score d'intérêt, compatibilité… Découvre la vérité sur ta relation.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Vérité",
   },
+  metadataBase: new URL("https://verite-app.netlify.app"),
 };
 
 export const viewport: Viewport = {
@@ -30,10 +48,6 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Vérité" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-screen font-sans" suppressHydrationWarning>
