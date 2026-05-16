@@ -34,29 +34,82 @@ const LOVE_PATTERNS =
 
 const LINK_REGEX = /https?:\/\/[^\s]+/gi;
 
-// WhatsApp export formats:
+// WhatsApp export formats (many variations across regions/OS):
 // [DD/MM/YYYY, HH:MM:SS] Sender: Message
-// [DD/MM/YYYY à HH:MM:SS] Sender: Message  
+// [DD/MM/YYYY à HH:MM:SS] Sender: Message
 // DD/MM/YYYY, HH:MM - Sender: Message
+// DD/MM/YYYY HH:MM - Sender: Message
 // [MM/DD/YY, HH:MM:SS AM/PM] Sender: Message
-const LINE_REGEX =
-  /^(?:\[?)(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[\s,àa]*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:AM|PM))?)(?:\]?\s*[-–]?\s*)([^:]+?):\s(.+)$/;
+// MM/DD/YY, HH:MM AM/PM - Sender: Message
+const LINE_REGEXES = [
+  // [date, time] Sender: Message (with brackets)
+  /^\[?(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+[àa]?\s*(\d{1,2}[:\.]\d{2}(?:[:\.]\d{2})?(?:\s*[APap][Mm])?)\]?\s*[-–—]?\s*([^:]+?):\s(.+)$/,
+  // date, time - Sender: Message (no brackets, dash separator)
+  /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})[,\s]+(\d{1,2}[:\.]\d{2}(?:[:\.]\d{2})?(?:\s*[APap][Mm])?)\s*[-–—]\s*([^:]+?):\s(.+)$/,
+  // date time - Sender: Message (no comma between date and time)
+  /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\s+(\d{1,2}[:\.]\d{2}(?:[:\.]\d{2})?(?:\s*[APap][Mm])?)\s*[-–—]\s*([^:]+?):\s(.+)$/,
+];
 
 function extractEmojis(text: string): string[] {
   return text.match(EMOJI_REGEX) || [];
 }
 
+function isSystemMessage(line: string): boolean {
+  const systemPatterns = [
+    "Les messages et les appels sont chiffrés",
+    "Messages and calls are end-to-end encrypted",
+    "a créé le groupe",
+    "created group",
+    "a changé le sujet",
+    "changed the subject",
+    "a changé l'icône",
+    "changed this group",
+    "a ajouté",
+    "added",
+    "a quitté",
+    "left",
+    "a été retiré",
+    "was removed",
+    "Vous avez été ajouté",
+    "You were added",
+    "Les messages envoyés dans cette discussion",
+    "Messages to this chat",
+    "a changé son numéro",
+    "changed their phone number",
+    "Missed voice call",
+    "Appel vocal manqué",
+    "Appel vidéo manqué",
+    "Missed video call",
+    "Ce message a été supprimé",
+    "This message was deleted",
+  ];
+  return systemPatterns.some(p => line.includes(p));
+}
+
 export function parseWhatsAppExport(content: string): ParsedChat {
-  // Remove BOM and normalize line endings
-  const cleaned = content.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  // Remove BOM, Unicode invisible chars (LRM, RLM, ZWS, NBSP), and normalize line endings
+  const cleaned = content
+    .replace(/^\uFEFF/, "")
+    .replace(/[\u200e\u200f\u200b\u200c\u200d\u2060\u00a0\ufeff]/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\t/g, " ");
   const lines = cleaned.split("\n");
   const messages: WhatsAppMessage[] = [];
   const participantSet = new Set<string>();
 
   let currentMessage: WhatsAppMessage | null = null;
 
-  for (const line of lines) {
-    const match = line.match(LINE_REGEX);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // Try each regex pattern
+    let match: RegExpMatchArray | null = null;
+    for (const regex of LINE_REGEXES) {
+      match = line.match(regex);
+      if (match) break;
+    }
 
     if (match) {
       if (currentMessage) {
@@ -118,11 +171,12 @@ export function parseWhatsAppExport(content: string): ParsedChat {
         isLaugh: LAUGH_PATTERNS.test(text),
         isLove: LOVE_PATTERNS.test(text),
       };
-    } else if (currentMessage && line.trim()) {
-      // Multi-line message continuation
-      currentMessage.text += "\n" + line.trim();
-      currentMessage.wordCount += line.trim().split(/\s+/).length;
-      currentMessage.charCount += line.trim().length;
+    } else if (currentMessage && line) {
+      // Multi-line message continuation (skip system messages)
+      if (isSystemMessage(line)) continue;
+      currentMessage.text += "\n" + line;
+      currentMessage.wordCount += line.split(/\s+/).length;
+      currentMessage.charCount += line.length;
       const emojis = extractEmojis(line);
       currentMessage.emojiCount += emojis.length;
       currentMessage.emojis.push(...emojis);

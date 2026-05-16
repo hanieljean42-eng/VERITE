@@ -30,6 +30,10 @@ export default function RootLayout({
     <html lang="fr">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Vérité" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-screen font-sans">
         {children}

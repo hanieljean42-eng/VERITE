@@ -19,7 +19,13 @@ export default function Home() {
   const handleFileLoaded = useCallback((content: string) => {
     const result = parseWhatsAppExport(content);
     if (result.messages.length === 0) {
-      alert("Aucun message trouvé. Vérifie que c'est bien un export WhatsApp.");
+      // Show first lines to help debug
+      const preview = content.substring(0, 300).replace(/[^\x20-\x7E\u00C0-\u017F\n]/g, "?");
+      alert(
+        `Aucun message trouvé dans ce fichier.\n\n` +
+        `Aperçu du contenu :\n${preview}\n\n` +
+        `Assure-toi que c'est un export WhatsApp (.txt ou .zip).`
+      );
       return;
     }
     setParsed(result);

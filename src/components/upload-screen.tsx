@@ -13,12 +13,21 @@ export default function UploadScreen({ onFileLoaded }: Props) {
   const [loading, setLoading] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
     // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone) {
       setIsInstalled(true);
     }
+    // Detect iOS
+    const ua = navigator.userAgent;
+    const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const safari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+    setIsIOS(ios);
+    setIsSafari(safari);
+
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e);
@@ -44,26 +53,34 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         if (isZip) {
           const arrayBuffer = await file.arrayBuffer();
           const zip = await JSZip.loadAsync(arrayBuffer);
-          // Find the .txt file inside the zip
+          // Find the .txt file inside the zip (prefer _chat.txt or WhatsApp patterns)
           let txtContent: string | null = null;
-          for (const [filename, zipEntry] of Object.entries(zip.files)) {
-            if (!zipEntry.dir && (filename.endsWith(".txt") || filename.includes("WhatsApp"))) {
-              txtContent = await zipEntry.async("string");
+          const zipFiles = Object.entries(zip.files).filter(([, e]) => !e.dir);
+
+          // Priority 1: files with _chat.txt or WhatsApp in name
+          for (const [filename, zipEntry] of zipFiles) {
+            if (filename.endsWith(".txt") || filename.includes("WhatsApp") || filename.includes("chat")) {
+              // Read as Uint8Array and decode manually to handle encoding
+              const bytes = await zipEntry.async("uint8array");
+              txtContent = new TextDecoder("utf-8").decode(bytes);
               break;
             }
           }
-          // If no .txt found, try the first file
+          // Priority 2: any text file
           if (!txtContent) {
-            const files = Object.values(zip.files).filter(f => !f.dir);
-            if (files.length > 0) {
-              txtContent = await files[0].async("string");
+            for (const [filename, zipEntry] of zipFiles) {
+              if (!filename.endsWith(".jpg") && !filename.endsWith(".png") && !filename.endsWith(".opus") && !filename.endsWith(".mp4")) {
+                const bytes = await zipEntry.async("uint8array");
+                txtContent = new TextDecoder("utf-8").decode(bytes);
+                break;
+              }
             }
           }
           setLoading(false);
           if (txtContent) {
             onFileLoaded(txtContent);
           } else {
-            alert("Aucun fichier texte trouvé dans le ZIP.");
+            alert("Aucun fichier texte trouvé dans le ZIP. Fichiers trouvés : " + zipFiles.map(([n]) => n).join(", "));
           }
         } else {
           const reader = new FileReader();
@@ -141,7 +158,7 @@ export default function UploadScreen({ onFileLoaded }: Props) {
         onDrop={handleDrop}
         onClick={() => fileRef.current?.click()}
       >
-        <input ref={fileRef} type="file" accept=".txt,.zip" className="hidden" onChange={handleChange} />
+        <input ref={fileRef} type="file" accept="*/*" className="hidden" onChange={handleChange} />
 
         {loading ? (
           <div className="py-8">
@@ -176,10 +193,21 @@ export default function UploadScreen({ onFileLoaded }: Props) {
               className="btn-primary px-6 py-2 text-sm">
               Installer Vérité
             </button>
+          ) : isIOS || isSafari ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 text-xs text-dark-600">
+                <span className="text-lg">⤴️</span>
+                <span>Appuie sur <strong className="text-dark-800">Partager</strong> (icône en bas)</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs text-dark-600">
+                <span className="text-lg">➕</span>
+                <span>Puis <strong className="text-dark-800">Sur l'écran d'accueil</strong></span>
+              </div>
+              <p className="text-[10px] text-dark-400 mt-1">L'app apparaîtra ensuite dans WhatsApp lors de l'export</p>
+            </div>
           ) : (
             <p className="text-[11px] text-dark-400">
-              Sur Chrome : <strong>⋮ Menu → Installer l'application</strong><br/>
-              Sur Safari : <strong>Partager → Sur l'écran d'accueil</strong>
+              Sur Chrome : <strong>⋮ Menu → Installer l'application</strong>
             </p>
           )}
         </div>
